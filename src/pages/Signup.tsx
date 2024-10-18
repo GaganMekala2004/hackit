@@ -3,23 +3,37 @@ import { useNavigate } from 'react-router-dom'; // Import useNavigate for redire
 
 const SignUp: React.FC = () => {
     const navigate = useNavigate(); // Initialize the navigate function
-    const [username, setUsername] = useState(''); // State for username
-    const [email, setEmail] = useState(''); // State for email
-    const [password, setPassword] = useState(''); // State for password
-    const [showDialog, setShowDialog] = useState(false);
+    const [username, setUsername] = useState(''); // State for username input
+    const [email, setEmail] = useState(''); // State for email input
+    const [password, setPassword] = useState(''); // State for password input
+    const [errorMessage, setErrorMessage] = useState(''); // State for error messages
 
-    const handleSubmit = (event: React.FormEvent) => {
+    const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault(); // Prevent default form submission
-        setShowDialog(true); // Show success dialog
 
-        // Redirect to login after 3 seconds
-        setTimeout(() => {
-            navigate('/login'); // Redirect to login after sign-up
-        }, 3000);
-    };
+        const data = { username, email, password }; // Prepare data for submission
 
-    const handleLoginRedirect = () => {
-        navigate('/login'); // Redirect to login
+        try {
+            const response = await fetch('/api/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            if (response.ok) {
+                setErrorMessage(''); // Clear error message
+                const result = await response.json(); // Parse the JSON response
+                console.log('Signup successful, redirecting to dashboard with ID:', result.id); // Log the user ID for debugging
+                navigate('/dashboard'); // Redirect to the dashboard
+            } else {
+                const result = await response.json();
+                setErrorMessage(result.error || result.message || 'An unexpected error occurred.'); // Show error message from server
+                console.error(result.error); // Log the error for debugging
+            }
+
+        } catch (error) {
+            setErrorMessage('Error signing up. Please try again.'); // Show generic error message
+        }
     };
 
     return (
@@ -28,13 +42,13 @@ const SignUp: React.FC = () => {
                 {`
                     html, body {
                         margin: 0;
-                        height: 100%; /* Ensure the body takes full height */
+                        height: 100%;
                         font-family: 'Arial', sans-serif;
                     }
                     .container {
                         display: flex;
                         width: 100%;
-                        height: 100vh; /* Set the container height to full viewport height */
+                        height: 100vh;
                     }
                     .left {
                         flex: 1;
@@ -62,7 +76,7 @@ const SignUp: React.FC = () => {
                     .right a {
                         color: #ffffff;
                         text-decoration: underline;
-                        cursor: pointer; /* Change cursor to pointer for better UX */
+                        cursor: pointer;
                     }
                     .form {
                         display: flex;
@@ -77,8 +91,8 @@ const SignUp: React.FC = () => {
                         margin: 10px 0;
                         border: none;
                         border-radius: 5px;
-                        font-size: 1em; /* Increase font size for better visibility */
-                        color: #333; /* Change text color for better contrast */
+                        font-size: 1em;
+                        color: #333;
                     }
                     .form button {
                         padding: 10px;
@@ -92,6 +106,9 @@ const SignUp: React.FC = () => {
                     .form button:hover {
                         background-color: #5A7AD1;
                     }
+                    .error-message {
+                        color: #ff0000;
+                    }
                     .dialog {
                         position: fixed;
                         top: 50%;
@@ -102,7 +119,7 @@ const SignUp: React.FC = () => {
                         padding: 20px;
                         border-radius: 10px;
                         box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-                        display: ${showDialog ? 'block' : 'none'};
+                        display: none; /* Initially hidden */
                     }
                 `}
             </style>
@@ -119,39 +136,35 @@ const SignUp: React.FC = () => {
                     <h1>Create an Account</h1>
                     <p>
                         Already have an account? 
-                        <a onClick={handleLoginRedirect}> Login</a>
+                        <a onClick={() => navigate('/login')}> Login</a>
                     </p>
                     <form className="form" onSubmit={handleSubmit}>
                         <input 
                             placeholder="Username" 
                             type="text" 
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)} // Update state on change
-                            required
+                            value={username} 
+                            onChange={(e) => setUsername(e.target.value)} 
+                            required 
                         />
                         <input 
                             placeholder="Email" 
                             type="email" 
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)} // Update state on change
-                            required
+                            value={email} 
+                            onChange={(e) => setEmail(e.target.value)} 
+                            required 
                         />
                         <input 
                             placeholder="Password" 
                             type="password" 
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)} // Update state on change
-                            required
+                            value={password} 
+                            onChange={(e) => setPassword(e.target.value)} 
+                            required 
                         />
                         <button type="submit">Create Account</button>
                     </form>
+                    {errorMessage && <p className="error-message">{errorMessage}</p>}
                 </div>
             </div>
-            {showDialog && (
-                <div className="dialog">
-                    <p>Account created successfully!</p>
-                </div>
-            )}
         </div>
     );
 };

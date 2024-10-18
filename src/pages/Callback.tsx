@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Callback: React.FC = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -27,6 +28,7 @@ const Callback: React.FC = () => {
 
                     const data = await response.json();
                     setAccessToken(data.access_token); // Store the access token
+                    navigate('/dashboard'); // Redirect to dashboard after successful token fetch
                 } catch (error: any) {
                     setError(error.message);
                 }
@@ -36,7 +38,7 @@ const Callback: React.FC = () => {
         };
 
         fetchAccessToken();
-    }, [location]);
+    }, [location, navigate]);
 
     return (
         <div>

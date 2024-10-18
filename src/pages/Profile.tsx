@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { User, Phone, Mail, MapPin, Calendar } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Calendar, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // Ensure react-router is installed.
 
 const PatientProfile: React.FC = () => {
+  const navigate = useNavigate(); // For navigation to the login page
+
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingConditions, setIsEditingConditions] = useState(false);
   const [isEditingMedications, setIsEditingMedications] = useState(false);
@@ -29,22 +32,36 @@ const PatientProfile: React.FC = () => {
     'Acetaminophen 500mg as needed for pain',
   ]);
 
-  const [newConditions, setNewConditions] = useState(medicalConditions);
-  const [newMedications, setNewMedications] = useState(currentMedications);
+  const [editingConditionIndex, setEditingConditionIndex] = useState<number | null>(null);
+  const [editingMedicationIndex, setEditingMedicationIndex] = useState<number | null>(null);
 
   const handleSaveProfile = () => {
     setProfile(newProfile);
     setIsEditingProfile(false);
   };
 
-  const handleSaveConditions = () => {
-    setMedicalConditions(newConditions);
-    setIsEditingConditions(false);
+  const handleAddCondition = () => {
+    setMedicalConditions([...medicalConditions, 'New Condition']);
+    setEditingConditionIndex(medicalConditions.length); // Start editing new entry
   };
 
-  const handleSaveMedications = () => {
-    setCurrentMedications(newMedications);
-    setIsEditingMedications(false);
+  const handleAddMedication = () => {
+    setCurrentMedications([...currentMedications, 'New Medication']);
+    setEditingMedicationIndex(currentMedications.length); // Start editing new entry
+  };
+
+  const handleDeleteCondition = (index: number) => {
+    setMedicalConditions((prev) => prev.filter((_, i) => i !== index));
+    setEditingConditionIndex(null); // Reset editing index
+  };
+
+  const handleDeleteMedication = (index: number) => {
+    setCurrentMedications((prev) => prev.filter((_, i) => i !== index));
+    setEditingMedicationIndex(null); // Reset editing index
+  };
+
+  const handleLogout = () => {
+    navigate('/login'); // Redirect to the login page
   };
 
   return (
@@ -53,11 +70,16 @@ const PatientProfile: React.FC = () => {
         Patient Profile
         <button
           className="border border-blue-500 text-blue-500 rounded px-1.5 py-0.5 text-sm hover:bg-blue-500 hover:text-white transition"
-          onClick={() => setIsEditingProfile(!isEditingProfile)}
+          onClick={() => {
+            if (isEditingProfile) handleSaveProfile();
+            else setIsEditingProfile(true);
+          }}
         >
           {isEditingProfile ? 'Save' : 'Edit'}
         </button>
       </h1>
+
+      {/* Profile Section */}
       <div className="flex flex-col md:flex-row">
         <div className="md:w-1/3 mb-6 md:mb-0">
           <img
@@ -94,85 +116,129 @@ const PatientProfile: React.FC = () => {
         </div>
       </div>
 
-      <div className="mt-8">
-        <h3 className="text-xl font-semibold mb-4 flex justify-between items-center">
-          Medical Conditions
-          <button
-            className="border border-green-500 text-green-500 rounded px-1.5 py-0.5 text-sm hover:bg-green-500 hover:text-white transition"
-            onClick={() => {
-              if (isEditingConditions) {
-                handleSaveConditions();
-              } else {
-                setIsEditingConditions(true);
-                setNewConditions(medicalConditions);
-              }
-            }}
-          >
-            {isEditingConditions ? 'Save' : 'Edit'}
-          </button>
-        </h3>
-        {isEditingConditions ? (
-          <input
-            type="text"
-            value={newConditions.join(', ')}
-            onChange={(e) => setNewConditions(e.target.value.split(', '))}
-            className="border border-gray-300 rounded p-2 w-full"
-          />
-        ) : (
-          <ul className="list-disc list-inside">
-            {medicalConditions.map((condition, index) => (
-              <li key={index}>{condition}</li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <Section
+        title="Medical Conditions"
+        items={medicalConditions}
+        isEditing={isEditingConditions}
+        editingIndex={editingConditionIndex}
+        onEdit={(index) => setEditingConditionIndex(index)}
+        onChange={(index, value) => {
+          const updated = [...medicalConditions];
+          updated[index] = value;
+          setMedicalConditions(updated);
+        }}
+        onSave={() => setIsEditingConditions((prev) => !prev)}
+        onAdd={handleAddCondition}
+        onDelete={handleDeleteCondition}
+      />
 
-      <div className="mt-8">
-        <h3 className="text-xl font-semibold mb-4 flex justify-between items-center">
-          Current Medications
-          <button
-            className="border border-green-500 text-green-500 rounded px-1.5 py-0.5 text-sm hover:bg-green-500 hover:text-white transition"
-            onClick={() => {
-              if (isEditingMedications) {
-                handleSaveMedications();
-              } else {
-                setIsEditingMedications(true);
-                setNewMedications(currentMedications);
-              }
-            }}
-          >
-            {isEditingMedications ? 'Save' : 'Edit'}
-          </button>
-        </h3>
-        {isEditingMedications ? (
-          <input
-            type="text"
-            value={newMedications.join(', ')}
-            onChange={(e) => setNewMedications(e.target.value.split(', '))}
-            className="border border-gray-300 rounded p-2 w-full"
-          />
-        ) : (
-          <ul className="list-disc list-inside">
-            {currentMedications.map((medication, index) => (
-              <li key={index}>{medication}</li>
-            ))}
-          </ul>
-        )}
+      <Section
+        title="Current Medications"
+        items={currentMedications}
+        isEditing={isEditingMedications}
+        editingIndex={editingMedicationIndex}
+        onEdit={(index) => setEditingMedicationIndex(index)}
+        onChange={(index, value) => {
+          const updated = [...currentMedications];
+          updated[index] = value;
+          setCurrentMedications(updated);
+        }}
+        onSave={() => setIsEditingMedications((prev) => !prev)}
+        onAdd={handleAddMedication}
+        onDelete={handleDeleteMedication}
+      />
+
+      {/* Logout Button */}
+      <div className="flex justify-center mt-10">
+        <button
+          className="border border-red-500 text-red-500 rounded px-3 py-1 text-sm hover:bg-red-500 hover:text-white transition"
+          onClick={handleLogout}
+        >
+          <LogOut className="inline mr-1" /> Logout
+        </button>
       </div>
     </div>
   );
 };
+
+const Section: React.FC<{
+  title: string;
+  items: string[];
+  isEditing: boolean;
+  editingIndex: number | null;
+  onEdit: (index: number) => void;
+  onChange: (index: number, value: string) => void;
+  onSave: () => void;
+  onAdd: () => void;
+  onDelete: (index: number) => void;
+}> = ({ title, items, isEditing, editingIndex, onEdit, onChange, onSave, onAdd, onDelete }) => (
+  <div className="mt-8">
+    <h3 className="text-xl font-semibold mb-4 flex justify-between items-center">
+      {title}
+      <div>
+        <button
+          className="border border-green-500 text-green-500 rounded px-1.5 py-0.5 text-sm hover:bg-green-500 hover:text-white transition mr-2"
+          onClick={onSave}
+        >
+          {isEditing ? 'Save' : 'Edit'}
+        </button>
+        {isEditing && (
+          <button
+            className="border border-blue-500 text-blue-500 rounded px-1.5 py-0.5 text-sm hover:bg-blue-500 hover:text-white transition"
+            onClick={onAdd}
+          >
+            Add
+          </button>
+        )}
+      </div>
+    </h3>
+
+    <div className="grid grid-cols-1 gap-4">
+      {items.map((item, index) => (
+        <div
+          key={index}
+          className={`border p-4 rounded-lg ${
+            isEditing && editingIndex === index ? 'bg-gray-50 shadow-sm' : 'bg-white'
+          }`}
+          onClick={() => isEditing && onEdit(index)}
+        >
+          {isEditing && editingIndex === index ? (
+            <div className="flex items-center space-x-2">
+              <input
+                type="text"
+                value={item}
+                onChange={(e) => onChange(index, e.target.value)}
+                className="border border-gray-300 rounded p-2 w-full"
+              />
+              <button
+                className="border border-red-500 text-red-500 rounded px-2 py-1 text-sm hover:bg-red-500 hover:text-white transition"
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent triggering edit mode
+                  onDelete(index);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          ) : (
+            <p className="text-gray-800 font-medium">{item}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 const ProfileItem: React.FC<{ icon: React.ReactNode; label: string; value: string }> = ({
   icon,
   label,
   value,
 }) => (
-  <div className="flex items-center">
-    <div className="mr-2">{icon}</div>
+  <div className="flex items-center space-x-2">
+    <div className="text-gray-500">{icon}</div>
     <div>
-      <p className="text-sm text-gray-600">{label}</p>
-      <p className="font-medium">{value}</p>
+      <div className="text-sm text-gray-600">{label}</div>
+      <div className="font-semibold">{value}</div>
     </div>
   </div>
 );

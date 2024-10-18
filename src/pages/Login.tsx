@@ -5,20 +5,40 @@ const Login: React.FC = () => {
     const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
 
-    const handleSubmit = (event: React.FormEvent) => {
+    const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        navigate ('/dashboard');
+
+        const data = { username, password };
+
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            if (response.ok) {
+                setErrorMessage(''); // Clear error message
+                navigate('/dashboard'); // Redirect to the dashboard on successful login
+            } else {
+                const result = await response.json();
+                setErrorMessage(result.error || result.message || 'An unexpected error occurred.');
+            }
+        } catch (error) {
+            setErrorMessage('Error logging in. Please try again.');
+        }
     };
 
     const handleGoogleLogin = () => {
         const CLIENT_ID = process.env.REACT_APP_CLIENT_ID;
-        const REDIRECT_URI = 'http://localhost:5173/callback';
+        const REDIRECT_URI = 'http://localhost:5173/callback'; // Redirect after Google OAuth
         const SCOPE = 'https://www.googleapis.com/auth/userinfo.profile';
 
         if (!CLIENT_ID) {
-          console.error('CLIENT_ID is not defined in .env file');
-          return;
+            console.error('CLIENT_ID is not defined in .env file');
+            return;
         }
 
         const authUrl = `https://accounts.google.com/o/oauth2/auth?` +
@@ -27,7 +47,7 @@ const Login: React.FC = () => {
                         `response_type=code&` +
                         `scope=${encodeURIComponent(SCOPE)}`;
 
-        window.location.href = authUrl;
+        window.location.href = authUrl; // Redirect to Google's OAuth URL
     };
 
     return (
@@ -98,6 +118,9 @@ const Login: React.FC = () => {
                     .form button:hover {
                         background-color: #5A7AD1;
                     }
+                    .error-message {
+                        color: #ff0000;
+                    }
                     .google-button {
                         display: flex;
                         align-items: center;
@@ -158,6 +181,7 @@ const Login: React.FC = () => {
                         </svg>
                         <span>Login with Google</span>
                     </button>
+                    {errorMessage && <p className="error-message">{errorMessage}</p>}
                 </div>
             </div>
         </div>
